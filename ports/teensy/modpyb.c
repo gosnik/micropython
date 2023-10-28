@@ -27,7 +27,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <mk20dx128.h>
-#include "Arduino.h"
+
 
 #include "py/obj.h"
 #include "py/gc.h"

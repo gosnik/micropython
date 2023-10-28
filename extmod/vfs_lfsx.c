@@ -36,11 +36,16 @@
 #include "py/objarray.h"
 #include "py/objstr.h"
 #include "py/mperrno.h"
+#include "py/mpthread.h"
 #include "extmod/vfs.h"
 #include "shared/timeutils/timeutils.h"
 
 #if !MICROPY_ENABLE_FINALISER
 #error "MICROPY_VFS_LFS requires MICROPY_ENABLE_FINALISER"
+#endif
+
+#if defined(LFS2_THREADSAFE) && MICROPY_PY_THREAD
+mp_thread_mutex_t g_lfs2_mutex;
 #endif
 
 STATIC int MP_VFS_LFSx(dev_ioctl)(const struct LFSx_API (config) * c, int cmd, int arg, bool must_return_int) {
@@ -68,6 +73,22 @@ STATIC int MP_VFS_LFSx(dev_sync)(const struct LFSx_API (config) * c) {
     return MP_VFS_LFSx(dev_ioctl)(c, MP_BLOCKDEV_IOCTL_SYNC, 0, false);
 }
 
+STATIC int MP_VFS_LFSx(dev_lock)(const struct LFSx_API (config) * c) {
+#if defined(LFS2_THREADSAFE) && MICROPY_PY_THREAD
+    return (!mp_thread_mutex_lock(&g_lfs2_mutex, 1));
+#else
+#warning "LFS Locking DISABLED"
+    return 0;
+#endif
+}
+
+STATIC int MP_VFS_LFSx(dev_unlock)(const struct LFSx_API (config) * c) {
+#if defined(LFS2_THREADSAFE) && MICROPY_PY_THREAD
+    mp_thread_mutex_unlock(&g_lfs2_mutex);
+#endif
+    return 0;
+}
+
 STATIC void MP_VFS_LFSx(init_config)(MP_OBJ_VFS_LFSx * self, mp_obj_t bdev, size_t read_size, size_t prog_size, size_t lookahead) {
     self->blockdev.flags = MP_BLOCKDEV_FLAG_FREE_OBJ;
     mp_vfs_blockdev_init(&self->blockdev, bdev);
@@ -81,6 +102,12 @@ STATIC void MP_VFS_LFSx(init_config)(MP_OBJ_VFS_LFSx * self, mp_obj_t bdev, size
     config->prog = MP_VFS_LFSx(dev_prog);
     config->erase = MP_VFS_LFSx(dev_erase);
     config->sync = MP_VFS_LFSx(dev_sync);
+
+    #if defined(LFS2_THREADSAFE) && MICROPY_PY_THREAD
+    mp_thread_mutex_init(&g_lfs2_mutex);
+    config->lock = MP_VFS_LFSx(dev_lock);
+    config->unlock = MP_VFS_LFSx(dev_unlock);
+    #endif
 
     MP_VFS_LFSx(dev_ioctl)(config, MP_BLOCKDEV_IOCTL_INIT, 1, false); // initialise block device
     int bs = MP_VFS_LFSx(dev_ioctl)(config, MP_BLOCKDEV_IOCTL_BLOCK_SIZE, 0, true); // get block size

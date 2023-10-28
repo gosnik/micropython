@@ -14,7 +14,7 @@
 #include "shared/runtime/pyexec.h"
 #include "lexermemzip.h"
 
-#include "Arduino.h"
+
 
 #include "servo.h"
 #include "led.h"

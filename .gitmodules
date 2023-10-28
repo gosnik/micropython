@@ -59,3 +59,6 @@
 [submodule "lib/protobuf-c"]
 	path = lib/protobuf-c
 	url = https://github.com/protobuf-c/protobuf-c.git
+[submodule "qtbits_micropython"]
+	path = qtbits_micropython
+	url = git@github.com:gosnik/qtbits_micropython.git

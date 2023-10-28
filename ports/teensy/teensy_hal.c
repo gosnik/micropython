@@ -6,7 +6,7 @@
 #include "py/mphal.h"
 #include "usb.h"
 #include "uart.h"
-#include "Arduino.h"
+
 
 mp_uint_t mp_hal_ticks_ms(void) {
     return millis();

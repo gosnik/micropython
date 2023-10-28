@@ -6,7 +6,7 @@
 #include "obj.h"
 #include "servo.h"
 
-#include "Arduino.h"
+
 
 #define MAX_SERVOS  12
 #define INVALID_SERVO   -1
