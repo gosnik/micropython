@@ -33,6 +33,9 @@
 #include "extmod/vfs.h"
 #include "extmod/vfs_lfs.h"
 
+// QTBITS - hack to expose lfs structure.
+void* g_lfs = NULL;
+
 enum { LFS_MAKE_ARG_bdev, LFS_MAKE_ARG_readsize, LFS_MAKE_ARG_progsize, LFS_MAKE_ARG_lookahead, LFS_MAKE_ARG_mtime };
 
 static const mp_arg_t lfs_make_allowed_args[] = {

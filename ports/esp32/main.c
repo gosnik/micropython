@@ -64,6 +64,10 @@
 #include "modespnow.h"
 #endif
 
+#if defined(MICROPY_BOARD_STARTUP_DEF)
+MICROPY_BOARD_STARTUP_DEF
+#endif
+
 // MicroPython runs as a task under FreeRTOS
 #define MP_TASK_PRIORITY        (ESP_TASK_PRIO_MIN + 1)
 

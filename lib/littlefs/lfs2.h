@@ -419,6 +419,16 @@ typedef struct lfs2 {
 #endif
 } lfs2_t;
 
+enum lfs2_notify_events {
+    LFS2_NOTIFY_MOUNT,
+    LFS2_NOTIFY_UNMOUNT,
+    LFS2_NOTIFY_REMOVE,
+    LFS2_NOTIFY_RENAME,
+    LFS2_NOTIFY_WRITE,
+    LFS2_NOTIFY_TRUNC
+};
+
+typedef void (*lfs2_notify_cb)(lfs2_t *lfs2, enum lfs2_notify_events event, const void* arg);
 
 /// Filesystem functions ///
 
@@ -675,6 +685,11 @@ lfs2_ssize_t lfs2_fs_size(lfs2_t *lfs2);
 //
 // Returns a negative error code on failure.
 int lfs2_fs_traverse(lfs2_t *lfs2, int (*cb)(void*, lfs2_block_t), void *data);
+
+// Notify callback for events.
+// Returns a negative error code on failure.
+int lfs2_fs_notify_add(lfs2_notify_cb cb);
+int lfs2_fs_notify_rem(lfs2_notify_cb cb);
 
 #ifndef LFS2_READONLY
 #ifdef LFS2_MIGRATE

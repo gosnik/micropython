@@ -36,4 +36,7 @@ extern const mp_obj_type_t mp_type_vfs_lfs2;
 extern const mp_obj_type_t mp_type_vfs_lfs2_fileio;
 extern const mp_obj_type_t mp_type_vfs_lfs2_textio;
 
+// QTBITS - hack to expose lfs structure.
+extern void* g_lfs;
+
 #endif // MICROPY_INCLUDED_EXTMOD_VFS_LFS_H

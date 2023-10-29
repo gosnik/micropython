@@ -25,7 +25,6 @@ enum {
     LFS2_CMP_GT = 2,
 };
 
-
 /// Caching block device operations ///
 
 static inline void lfs2_cache_drop(lfs2_t *lfs2, lfs2_cache_t *rcache) {
@@ -5295,6 +5294,70 @@ cleanup:
 #define LFS2_UNLOCK(cfg) ((void)cfg)
 #endif
 
+struct lfs2_notify_node
+{
+    lfs2_notify_cb cb;
+    struct lfs2_notify_node *next;
+};
+
+struct lfs2_notify_node *head = NULL;
+
+int lfs2_fs_notify_add(lfs2_notify_cb cb)
+{
+    struct lfs2_notify_node *node = (struct lfs2_notify_node*)malloc(sizeof(struct lfs2_notify_node));
+    if (NULL == node)
+    {
+        return LFS2_ERR_NOMEM;
+    }
+
+    node->cb = cb;
+    node->next = head;
+    head = node;
+    return 0;
+}
+
+int lfs2_fs_notify_rem(lfs2_notify_cb cb)
+{
+    struct lfs2_notify_node *temp = NULL;
+
+    if (head->cb == cb)
+    {
+        temp = head;
+        head = head->next;
+        free(temp);
+    }
+    else
+    {
+        struct lfs2_notify_node *current = head;
+        while (current->next != NULL)
+        {
+            if (current->next->cb == cb)
+            {
+                temp = current->next;
+                current->next = current->next->next;
+                free(temp);
+                //TODO: return.
+            }
+            else
+            {
+                current = current->next;
+            }
+        }
+    }
+    //TODO: err.
+    return 0;
+}
+
+void lfs2_fs_notify(lfs2_t *lfs2, enum lfs2_notify_events event, const void* arg)
+{
+    struct lfs2_notify_node *temp = head;
+    while (temp != NULL)
+    {
+        (*temp->cb)(lfs2, event, arg);
+        temp = temp->next;
+    }
+}
+
 // Public API
 #ifndef LFS2_READONLY
 int lfs2_format(lfs2_t *lfs2, const struct lfs2_config *cfg) {
@@ -5353,6 +5416,10 @@ int lfs2_mount(lfs2_t *lfs2, const struct lfs2_config *cfg) {
 
     LFS2_TRACE("lfs2_mount -> %d", err);
     LFS2_UNLOCK(cfg);
+
+    if (err >= 0)
+        lfs2_fs_notify(lfs2, LFS2_NOTIFY_MOUNT, cfg);
+
     return err;
 }
 
@@ -5367,6 +5434,10 @@ int lfs2_unmount(lfs2_t *lfs2) {
 
     LFS2_TRACE("lfs2_unmount -> %d", err);
     LFS2_UNLOCK(lfs2->cfg);
+
+    if (err >= 0)
+        lfs2_fs_notify(lfs2, LFS2_NOTIFY_UNMOUNT, NULL);
+
     return err;
 }
 
@@ -5382,6 +5453,10 @@ int lfs2_remove(lfs2_t *lfs2, const char *path) {
 
     LFS2_TRACE("lfs2_remove -> %d", err);
     LFS2_UNLOCK(lfs2->cfg);
+
+    if (err >= 0)
+        lfs2_fs_notify(lfs2, LFS2_NOTIFY_REMOVE, path);
+
     return err;
 }
 #endif
@@ -5398,6 +5473,10 @@ int lfs2_rename(lfs2_t *lfs2, const char *oldpath, const char *newpath) {
 
     LFS2_TRACE("lfs2_rename -> %d", err);
     LFS2_UNLOCK(lfs2->cfg);
+
+    if (err >= 0)
+        lfs2_fs_notify(lfs2, LFS2_NOTIFY_RENAME, oldpath);
+
     return err;
 }
 #endif
@@ -5568,6 +5647,10 @@ lfs2_ssize_t lfs2_file_write(lfs2_t *lfs2, lfs2_file_t *file,
 
     LFS2_TRACE("lfs2_file_write -> %"PRId32, res);
     LFS2_UNLOCK(lfs2->cfg);
+
+    if (err >= 0)
+        lfs2_fs_notify(lfs2, LFS2_NOTIFY_WRITE, file);
+
     return res;
 }
 #endif
@@ -5603,6 +5686,10 @@ int lfs2_file_truncate(lfs2_t *lfs2, lfs2_file_t *file, lfs2_off_t size) {
 
     LFS2_TRACE("lfs2_file_truncate -> %d", err);
     LFS2_UNLOCK(lfs2->cfg);
+
+    if (err >= 0)
+        lfs2_fs_notify(lfs2, LFS2_NOTIFY_TRUNC, file);
+
     return err;
 }
 #endif
